@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>YooQuiero</title>
+		<link href="assets/css/estilos.css" rel="stylesheet">
+		<meta name="viewport" id="viewport"
+	    content="width=device-width, height=device-height,
+	    initial-scale=1.0, maximum-scale=1.0,
+	    user-scalable=no" />
+		<script src="phonegap.js"></script>
+	</head>
+	<body>
+		<div class="navbar">
+			<span class="logo" id="feed">YooQuiero</span>
+			<img src ="assets/img/campana_blanca.png" class="icono" id="notificaciones">
+			<img src ="assets/img/perfil_bordes.png" class="icono" id="perfil">
+		</div>
+		<div class="contenedor">
+			<div class="centrar">
+				<div class="loadBar">
+					<div id="loadingProgressG" style="display:inline-flex;">
+						<div id="loadingProgressG_1" class="loadingProgressG">
+						</div>
+					</div>
+				</div>			
+			</div>
+		</div>		
+		<script src="assets/js/jquery.js"></script>
+		<script  type="text/javascript" language="javascript">
+			var base_url = "http://52.27.16.14/getplan/";
+
+			function ajax(url,data,done,error){
+	            $.ajax({
+	                url: base_url+url,
+	                context : document.body,
+	                dataType: "json",
+	                type: "POST",
+	                data: data
+	            }).done(done).error(error);
+	        }
+
+	        function abrirPublicacion(publicacion){
+	        	localStorage.detallepost = publicacion;
+	        	window.location.assign("publicacion.html");
+	        }
+
+	        function cargar_mis_notificaciones(){
+	        	ajax(
+        			'notificaciones/ver',
+        			{'usuario': localStorage.idfb},
+        			function(data){
+        				if(data.Status == 'OK'){
+        					var contenido = '';
+        					for(var i = 0; i < data.Notificaciones.length; i++){
+        						contenido += '<div class="notificaciones" onclick="abrirPublicacion(\''+data.Notificaciones[i].idPublicacion+'\')">';
+								contenido += '<img src="'+data.Notificaciones[i].foto+'" class="img-notificaciones left">';
+								contenido += '<div class="text-notificaciones">'+data.Notificaciones[i].texto+'</div>';
+								contenido += '</div>';
+								contenido += '<hr class="hr-notificaciones">';
+        					}
+        					$('.contenedor').html(contenido);
+        				}
+        			},
+        			function(){
+        				var contenido = '<div class="centrar"><br><br>';
+        				contenido += '<h3>¡Ups!, Houston tenemos un problema, al parecer tu conexión a internet está fallando.</h3><br>';
+        				contenido += '<a href="publicaciones.html" class="btn btn-default">RECARGAR</a>';
+        				contenido += '</div>';
+        				$('.contenedor').html(contenido);
+        			}
+        		);
+	        }
+
+	        document.addEventListener("deviceready", onDeviceReady, false);
+
+			function onDeviceReady() {
+				$("#feed").click(function(){window.location.assign("feed.html");});
+				$("#perfil").click(function(){window.location.assign("publicaciones.html");});
+				$("#notificaciones").click(function(){window.location.assign("notificaciones.html");});
+
+				cargar_mis_notificaciones();		
+			}
+		</script>
+	</body>
+</html>

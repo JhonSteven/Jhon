@@ -1,0 +1,206 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>YooQuiero</title>
+		<link href="assets/css/estilos.css" rel="stylesheet">
+		<meta name="viewport" id="viewport"
+	    content="width=device-width, height=device-height,
+	    initial-scale=1.0, maximum-scale=1.0,
+	    user-scalable=no" />
+		<script src="phonegap.js"></script>
+	</head>
+	<body>
+		<div class="centrar contenido-80 fondo-azul">
+			<img src="assets/img/logo.png" class="logo-splash">
+		</div>
+		<div class="centrar contenido-20 fondo-azul">
+			<img src="assets/img/btnFB.png" id="btnFB" onclick="login"><br>
+            <small>Al continuar, aceptas nuestros <strong>Términos y condiciones</strong></small>
+		</div>		
+		<script src="assets/js/jquery.js"></script>
+		<script src="assets/js/openfb.js"></script>
+		<script  type="text/javascript" language="javascript">
+			var pushNotification;
+			var base_url = "http://52.27.16.14/getplan/";
+			var ProjectKey = "942527722011";
+
+			function ajax(url,data,done,error){
+	            $.ajax({
+	                url: base_url+url,
+	                context : document.body,
+	                dataType: "json",
+	                type: "POST",
+	                data: data
+	            }).done(done).error(error);
+	        }
+
+	        openFB.init({appId: '963337857046301'});
+
+		    function getFriends(){
+		    	openFB.api({
+		            path: '/me/friends',
+		            success: function(data) {
+		                registrar_amigos(JSON.stringify(data.data));
+		            },
+		            error: errorHandler
+		        });
+		    }
+
+		    function getInfo() {
+		        openFB.api({
+		            path: '/me',
+		            success: function(data) {
+		                localStorage.idfb = data.id;
+		                localStorage.nombre = data.name;
+		                localStorage.foto = 'http://graph.facebook.com/' + data.id + '/picture?type=large';
+		                registrar();
+		            },
+		            error: errorHandler
+		        });
+		    }	
+
+			var login = function(){
+				openFB.login(
+                function(response) {
+                    if(response.status === 'connected') {
+                        getInfo();
+                    } else {
+                        console.log('Facebook login failed: ' + response.error);
+                    }
+                }, {scope: 'email,user_friends,public_profile'});
+			}
+
+			function registrar(){
+				if ( device.platform == 'android' || device.platform == 'Android' || device.platform == "amazon-fireos" ){
+				    pushNotification.register(
+				    successHandler,
+				    errorHandler,
+				    {
+				        "senderID": ProjectKey,
+				        "ecb":"onNotification"
+				    });
+				}
+			}
+
+			// Android and Amazon Fire OS
+			function onNotification(e) {
+			    switch( e.event )
+			    {
+				    case 'registered':
+				        if ( e.regid.length > 0 )
+				        {
+				        	localStorage.regid = e.regid;
+				        	registrar_usuario();
+				        }
+				    break;
+				    case 'message':
+				    	localStorage.detallepost = e.payload.id;
+				    	alert(e.payload.id);
+				    	if (e.foreground)
+						{
+						          // ECB message event come here when your app is in foreground(not in background)
+						          localStorage.detallepost = e.payload.id;
+						}
+						else
+						{  
+						  if (e.coldstart)
+						  {
+						          // ECB message event come here when you touch notification from notification tray
+						          localStorage.detallepost = e.payload.id;
+						  }
+						  else
+						  {
+						         // ECB message event here when your app is in background    
+						         localStorage.detallepost = e.payload.id;
+						  }
+						}
+				    break;
+				    case 'error':
+				    	navigator.notification.alert(
+							    e.msg,  // message
+							    null,
+							    'Error', // title
+							    'OK' // buttonName
+							);
+				    break;
+				    default:
+				        navigator.notification.alert(
+							    '¡Wow! un error inesperado ha ocurrido, por favor intenta cargar de nuevo.',  // message
+							    null,
+							    'Error', // title
+							    'OK' // buttonName
+							);
+				    break;
+			  	}
+			}
+
+			// result contains any message sent from the plugin call
+			function successHandler (result) {
+			    //alert('result = ' + result);
+			}
+
+			// result contains any error description text returned from the plugin call
+			function errorHandler(error) {
+		        console.log(error.message);
+		    }
+
+		    function registrar_amigos(amigos){
+		    	ajax(
+		        	'amigos/nuevos',
+		        	{
+		        		'usuario': localStorage.idfb,
+		        		'amigos' : amigos
+		        	},
+		        	function(data){
+		        		if(data.Status == 'OK'){
+		        			window.location.assign("feed.html");
+		        		}
+		        	},
+		        	function(error){
+
+		        	}
+	        	);
+		    }
+
+			function registrar_usuario(){
+	        	ajax(
+		        	'usuarios/nuevo',
+		        	{
+		        		'push_id' : localStorage.regid,
+		        		'fb_id' : localStorage.idfb,
+		        		'nombre' : localStorage.nombre,
+		        		'foto': localStorage.foto,
+		        		'modelo': device.model,
+		        		'plataforma' : device.platform,
+		        		'uuid' : device.uuid,
+		        		'version' : device.version
+		        	},
+		        	function(data){
+		        		if(data.Status == 'OK'){
+		        			getFriends();
+		        		}
+		        	},
+		        	function(error){
+
+		        	}
+	        	);
+	        }
+
+            document.addEventListener("deviceready", onDeviceReady, false);
+            document.addEventListener("resume", onResume, false);
+
+            function onResume() {
+            	/*if(localStorage.detallepost) window.location.assign("publicacion.html");
+            	else if(localStorage.idfb) window.location.assign("feed.html");*/
+			}
+
+			function onDeviceReady() {
+				pushNotification = window.plugins.pushNotification;
+				$("#btnFB").click(login);
+
+				if(localStorage.idfb) window.location.assign("feed.html");
+			}
+		</script>
+	</body>
+</html>

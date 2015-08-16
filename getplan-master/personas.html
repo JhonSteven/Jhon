@@ -1,0 +1,87 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>YooQuiero</title>
+		<link href="assets/css/estilos.css" rel="stylesheet">
+		<meta name="viewport" id="viewport"
+	    content="width=device-width, height=device-height,
+	    initial-scale=1.0, maximum-scale=1.0,
+	    user-scalable=no" />
+		<script src="phonegap.js"></script>
+	</head>
+	<body>
+		<div class="navbar">
+			<span class="logo" id="back">
+				<img src="assets/img/atras.png" class="back">
+			</span>
+			<span class="textBack">
+				Yo Quieros
+			</span>
+		</div>
+		<div class="contenedor">
+			<div class="centrar">
+				<div class="loadBar">
+					<div id="loadingProgressG" style="display:inline-flex;">
+						<div id="loadingProgressG_1" class="loadingProgressG">
+						</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+		<script src="assets/js/jquery.js"></script>
+		<script  type="text/javascript" language="javascript">
+			var base_url = "http://52.27.16.14/getplan/";
+
+			function ajax(url,data,done,error){
+	            $.ajax({
+	                url: base_url+url,
+	                context : document.body,
+	                dataType: "json",
+	                type: "POST",
+	                data: data
+	            }).done(done).error(error);
+	        }
+
+	        function cargar_personas(){
+	        	ajax(
+        			'yoquieros/verusuarios',
+        			{'publicacion': localStorage.post},
+        			function(data){
+        				if(data.Status == 'OK'){
+        					var contenido = '';
+        					for(var i = 0; i < data.Usuarios.length; i++){
+        						contenido += '<div class="persona" onclick="irOtro(\''+data.Usuarios[i].usuario+'\')">';
+								contenido += '<img src="'+data.Usuarios[i].foto+'" class="img-persona left">';
+								contenido += '<div class="nombre-resaltado">'+data.Usuarios[i].nombre+'</div>';
+								contenido += '</div>';
+								contenido += '<hr class="hr-persona">';
+        					}
+        					$('.contenedor').html(contenido);
+        				}
+        			},
+        			function(){
+        				var contenido = '<div class="centrar"><br><br>';
+        				contenido += '<h3>¡Ups!, Houston tenemos un problema, al parecer tu conexión a internet está fallando.</h3><br>';
+        				contenido += '<a href="feed.html" class="btn btn-default">RECARGAR</a>';
+        				contenido += '</div>';
+        				$('.contenedor').html(contenido);
+        			}
+        		);
+	        }
+
+	        function irOtro(usuario){
+	        	localStorage.otro = usuario;
+	        	window.location.assign("otros.html");
+	        }
+
+	        document.addEventListener("deviceready", onDeviceReady, false);
+
+			function onDeviceReady() {
+				$("#back").click(function(){window.history.back();});
+
+				cargar_personas();
+			}
+		</script>
+	</body>
+</html>
